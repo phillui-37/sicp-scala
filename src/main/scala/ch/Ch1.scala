@@ -1,11 +1,6 @@
 import scala.annotation.tailrec
 import scala.util.Random
-
-extension (n: Int)
-  def dec: Int = n - 1
-  def inc: Int = n + 1
-  def even: Boolean = (n & 1) == 0
-  def odd: Boolean = (n & 1) == 1
+import ext._
 
 def sq(x: Int): Int = x * x
 def sq(x: Float): Float = x * x
@@ -172,16 +167,10 @@ def fibIter_1_19(a: Int, b: Int, p: Int, q: Int, count: Int): Int =
 
 def fib_1_19 = fibIter_1_19(1, 0, 0, 1, _)
 
-@tailrec def remainder(x: Int, y: Int): Int =
-  x.compareTo(y) match
-    case 0 => 0
-    case n if n > 0 => remainder(x - y, y)
-    case _ => x
-
 @tailrec def gcd(a: Int, b: Int): Int =
-  if b == 0 then a else gcd(b, remainder(a, b))
+  if b == 0 then a else gcd(b, a % b)
 
-def divides(a: Int, b: Int) = remainder(b, a) == 0
+def divides(a: Int, b: Int) = b % a == 0
 @tailrec def findDivisor(n: Int, testDivisor: Int): Int =
   if sq(testDivisor) > n then
     n
@@ -196,11 +185,69 @@ def prime(n: Int) = n == smallestDivisor(n)
 def expmod(base: Int, exp: Int, m: Int): Int =
   exp match
     case 0 => 1
-    case n if n.even => remainder(sq(expmod(base, exp/2, m)), m)
-    case _ => remainder(base * expmod(base, exp.dec, m), m)
+    case n if n.even => sq(expmod(base, n/2, m)) % m
+    case _ => base * expmod(base, exp.dec, m) % m
 def fermatTest(n: Int): Boolean =
   def tryIt(a: Int) = expmod(a,n,n) == a
   tryIt(1 + Random.nextInt(n.dec))
 
-def fastPrime(n: Int, times: Int): Boolean =
+@tailrec def fastPrime(n: Int, times: Int): Boolean =
   times == 0 || (fermatTest(n) && fastPrime(n, times.dec))
+
+
+// ex 1.21
+val ex_1_21_199 = smallestDivisor(199)
+val ex_1_21_1999 = smallestDivisor(1999)
+val ex_1_21_19999 = smallestDivisor(19999)
+
+// ex 1.22
+def reportPrime(prime:Int, elapsedTime: Long) =
+  println(" *** ")
+  println(s"$prime <= $elapsedTime")
+def startPrimeTest(n: Int, startTime: Long, checker: Int => Boolean = prime) =
+  if checker(n) then
+    reportPrime(n, System.currentTimeMillis - startTime)
+    true
+  else
+    false
+def timedPrimeTest(n: Int) =
+  println
+  println(n)
+  startPrimeTest(n, System.currentTimeMillis)
+
+def searchForPrimes_1_22(startNum: Int, checker: Int => Boolean = prime) =
+  println(s"startNum: $startNum")
+  val startTime = System.currentTimeMillis
+  val remain = 3
+
+  @tailrec def core(remain: Int, nowNum: Int): Int =
+    if remain == 0 then
+      nowNum
+    else
+      val primeResult = startPrimeTest(nowNum, startTime, checker)
+      core(if primeResult then remain.dec else remain, nowNum + 2)
+
+  if startNum.even then core(remain, startNum + 1) else core(remain, startNum)
+
+// ex 1.23
+def next_1_23(in: Int) = if in == 2 then 3 else if in.even then in.inc else in + 2
+@tailrec def findDivisor_1_23(n: Int, testDivisor: Int): Int =
+  if sq(testDivisor) > n then
+    n
+  else if divides(testDivisor, n) then
+    testDivisor
+  else
+    findDivisor_1_23(n, next_1_23(testDivisor))
+
+def smallestDivisor_1_23 = findDivisor_1_23(_, 2)
+
+def prime_1_23(n: Int) = n == smallestDivisor_1_23(n)
+
+// ex 1.24
+// don't know why fast prime not work...
+
+// ex 1.26
+// the expmod has been calculated for twice when exp is even
+
+
+
